@@ -14,7 +14,6 @@ pip install -r requirements.txt
 python CreateDocs.py
 
 python pipeline.py \
-    --project ${PROJECT} \
     --train_input_path Samples/Training/trainingdata.csv \
     --eval_input_path Samples/Testing/testingdata.csv \
     --input_dict Samples/dict.txt \

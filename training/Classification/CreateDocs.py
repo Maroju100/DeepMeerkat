@@ -12,7 +12,7 @@ else:
 import argparse
 
 class Organizer:
-    def __init__(self,args):
+    def __init__(self):
         
         
         #Training
@@ -61,7 +61,7 @@ class Organizer:
                 writer.writerow([str(eachrow),"negative"])
         
         ##Testing
-        with open("Samples/Training/testingdata.csv","wb") as f:
+        with open("Samples/Testing/testingdata.csv","wb") as f:
             writer=csv.writer(f)
             for eachrow in  self.test_positives_files:
                 writer.writerow([str(eachrow),"positive"])
@@ -76,5 +76,5 @@ class Organizer:
         
 if __name__ == "__main__":
     print(__name__)
-    p=Organizer(args)
+    p=Organizer()
     p.write_data()
