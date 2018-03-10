@@ -178,7 +178,7 @@ class FlowersE2E(object):
 
     trainer_uri = os.path.join(self.args.output_dir, TRAINER_NAME)
     subprocess.check_call(
-        ['gsutil', '-q', 'cp', os.path.join('dist', TRAINER_NAME), trainer_uri])
+        ['cp', os.path.join('dist', TRAINER_NAME), trainer_uri])
 
     thread_pool = multiprocessing.pool.ThreadPool(2)
 
@@ -278,99 +278,6 @@ class FlowersE2E(object):
       ] + trainer_args
     subprocess.check_call(command)
 
-  def deploy_model(self, model_path):
-    """Deploys the trained model.
-
-    Args:
-      model_path: Path to the trained model.
-    """
-
-    #create_model_cmd = [
-    #    'gcloud', 'ml-engine', 'models', 'create', self.args.deploy_model_name,
-    #   '--regions', 'us-central1',
-    #    '--project', self.args.project,
-    #]
-
-    #print(create_model_cmd)
-    #subprocess.check_call(create_model_cmd)
-
-    submit = [
-        'gcloud', 'ml-engine', 'versions', 'create',
-        self.args.deploy_model_version,
-        '--model', self.args.deploy_model_name,
-        '--origin', model_path,
-        '--project', self.args.project,
-        '--runtime-version', self.args.runtime_version,
-    ]
-    if not model_path.startswith('gs://'):
-      submit.extend(['--staging-bucket', self.args.gcs_bucket])
-    print(submit)
-    subprocess.check_call(submit)
-
-    self.adaptive_wait()
-
-    print('Deployed %s version: %s' % (self.args.deploy_model_name,
-                                       self.args.deploy_model_version))
-
-  def adaptive_wait(self):
-    """Waits for a model to be fully deployed.
-
-       It keeps sending online prediction requests until a prediction is
-       successful or maximum wait time is reached. It sleeps between requests.
-    """
-    start_time = datetime.datetime.utcnow()
-    elapsed_time = 0
-    while elapsed_time < self.args.max_deploy_wait_time:
-      try:
-        self.predict(self.args.sample_image_uri)
-        return
-      except Exception as e:
-        time.sleep(PREDICTION_WAIT_TIME)
-        elapsed_time = (datetime.datetime.utcnow() - start_time).total_seconds()
-        continue
-
-  def predict(self, image_uri):
-    """Sends a predict request for the deployed model for the given image.
-
-    Args:
-      image_uri: The input image URI.
-    """
-    output_json = 'request.json'
-    self.make_request_json(image_uri, output_json)
-    cmd = [
-        'gcloud', 'ml-engine', 'predict',
-        '--model', self.args.deploy_model_name,
-        '--version', self.args.deploy_model_version,
-        '--json-instances', 'request.json',
-        '--project', self.args.project
-    ]
-    subprocess.check_call(cmd)
-
-  def make_request_json(self, uri, output_json):
-    """Produces a JSON request suitable to send to CloudML Prediction API.
-
-    Args:
-      uri: The input image URI.
-      output_json: File handle of the output json where request will be written.
-    """
-    def _open_file_read_binary(uri):
-      try:
-        return file_io.FileIO(uri, mode='rb')
-      except errors.InvalidArgumentError:
-        return file_io.FileIO(uri, mode='r')
-
-    with open(output_json, 'w') as outf:
-      with _open_file_read_binary(uri) as f:
-        image_bytes = f.read()
-        image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-        image = image.resize((299, 299), Image.BILINEAR)
-        resized_image = io.BytesIO()
-        image.save(resized_image, format='JPEG')
-        encoded_image = base64.b64encode(resized_image.getvalue())
-        row = json.dumps({'key': uri, 'image_bytes': {'b64': encoded_image}})
-        outf.write(row)
-        outf.write('\n')
-
   def run(self):
     """Runs the pipeline."""
     model_path = self.args.pretrained_model_path
@@ -382,7 +289,6 @@ class FlowersE2E(object):
         train_prefix, eval_prefix = self.preprocess()
       self.train(train_prefix + '*', eval_prefix + '*')
       model_path = os.path.join(self.args.output_dir, EXPORT_SUBDIRECTORY)
-    self.deploy_model(model_path)
 
 
 def get_cloud_project():

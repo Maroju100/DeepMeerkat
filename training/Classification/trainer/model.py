@@ -385,8 +385,8 @@ class Model(object):
     try:
       loss_str = '%.3f' % metric_values[0]
       accuracy_str = '%.3f' % metric_values[1]
-    except (TypeError, IndexError):
-      pass
+    except (TypeError, IndexError) as E:
+      raise E
 
     return '%s, %s' % (loss_str, accuracy_str)
 

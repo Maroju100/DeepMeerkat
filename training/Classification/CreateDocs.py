@@ -14,14 +14,12 @@ import argparse
 class Organizer:
     def __init__(self):
         
-        
         #Training
-        self.train_positives_files=glob.glob("Samples/Training/Positives/*.jpg")       
+        self.train_positives_files=glob.glob("/Users/ben/Documents/DeepMeerkat/training/Classification/Samples/Training/Positives/*.jpg")       
         print( "Positive training samples: %d" %(len( self.train_positives_files)))  
         
         #negatives
-        self.train_negatives_files=glob.glob("Samples/Training/Negatives/*.jpg")       
-        print( "Negative training samples: %d" %(len( self.train_negatives_files)))     
+        self.train_negatives_files=glob.glob("/Users/ben/Documents/DeepMeerkat/training/Classification/Samples/Training/Negatives/*.jpg")       
                     
         #shuffle negatives and take a sample equal to the size of the positives
         random.shuffle(self.train_negatives_files)
@@ -29,17 +27,16 @@ class Organizer:
         #cut the file to match positives
         self.train_negatives_files=self.train_negatives_files[:len(self.train_positives_files)]
         
-        print( "Negative Training Samples: %d" % (len( self.train_negatives_files)))          
+        print( "Negative training Samples: %d" % (len( self.train_negatives_files)))          
         
         ##Testing
         
         #testing
-        self.test_positives_files=glob.glob("Samples/testing/Positives/*.jpg")       
+        self.test_positives_files=glob.glob("/Users/ben/Documents/DeepMeerkat/training/Classification/Samples/testing/Positives/*.jpg")       
         print( "Positive testing samples: %d" %(len( self.test_positives_files)))  
     
         #negatives
-        self.test_negatives_files=glob.glob("Samples/testing/Negatives/*.jpg")       
-        print( "Negative testing samples: %d" %(len( self.test_negatives_files)))     
+        self.test_negatives_files=glob.glob("/Users/ben/Documents/DeepMeerkat/training/Classification/Samples/testing/Negatives/*.jpg")       
     
         #shuffle negatives and take a sample equal to the size of the positives
         random.shuffle(self.test_negatives_files)
@@ -52,6 +49,7 @@ class Organizer:
     def write_data(self):
         
         ##Training
+        
         
         with open("Samples/Training/trainingdata.csv","wb") as f:
             writer=csv.writer(f)

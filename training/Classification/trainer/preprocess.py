@@ -124,13 +124,15 @@ class ExtractLabelIdsDoFn(beam.DoFn):
 
   # The try except is for compatiblity across multiple versions of the sdk
   def process(self, row, all_labels):
-    try:
-      row = row.element
-    except AttributeError:
-      pass
+    #try:
+      #row = row.element
+    #except AttributeError:
+      #logging.info("No row element")      
+      #pass
     if not self.label_to_id_map:
       for i, label in enumerate(all_labels):
         label = label.strip()
+        
         if label:
           self.label_to_id_map[label] = i
 
@@ -141,10 +143,9 @@ class ExtractLabelIdsDoFn(beam.DoFn):
 
     csv_rows_count.inc()
     uri = row[0]
-    if not uri or not uri.startswith('gs://'):
-      invalid_uri.inc()
-      return
-
+    #if not uri or not uri.startswith('gs://'):
+      #invalid_uri.inc()
+      #return
     # In a real-world system, you may want to provide a default id for labels
     # that were not in the dictionary.  In this sample, we simply skip it.
     # This code already supports multi-label problems if you want to use it.
@@ -159,6 +160,7 @@ class ExtractLabelIdsDoFn(beam.DoFn):
 
     if not label_ids:
       unlabeled_image.inc()
+      
     yield row[0], label_ids
 
 
@@ -170,6 +172,10 @@ class ReadImageAndConvertToJpegDoFn(beam.DoFn):
   """
 
   def process(self, element):
+    
+    logging.info("ReadImageAndConvertToJpegDoFn")
+    logging.info(element)
+    
     try:
       uri, label_ids = element.element
     except AttributeError:
@@ -196,9 +202,13 @@ class ReadImageAndConvertToJpegDoFn(beam.DoFn):
       return
 
     # Convert to desired format and output.
+    
     output = io.BytesIO()
     img.save(output, Default.FORMAT)
     image_bytes = output.getvalue()
+    logging.info(uri)
+    logging.info(len(image_bytes))
+    
     yield uri, label_ids, image_bytes
 
 
@@ -212,6 +222,7 @@ class EmbeddingsGraph(object):
   CHANNELS = 3
 
   def __init__(self, tf_session):
+    logging.info("InsideEmbeddingsGraph")    
     self.tf_session = tf_session
     # input_jpeg is the tensor that contains raw image bytes.
     # It is used to feed image bytes and obtain embeddings.
@@ -312,6 +323,7 @@ class TFExampleFromImageDoFn(beam.DoFn):
     self.tf_session = None
     self.graph = None
     self.preprocess_graph = None
+    logging.info("InsideTFEXAMPLEFROMIMAGEDOFN")
 
   def start_bundle(self, context=None):
     # There is one tensorflow session per instance of TFExampleFromImageDoFn.
@@ -335,6 +347,7 @@ class TFExampleFromImageDoFn(beam.DoFn):
     try:
       element = element.element
     except AttributeError:
+      #logging.info("no value")      
       pass
     uri, label_ids, image_bytes = element
 
@@ -362,29 +375,33 @@ class TFExampleFromImageDoFn(beam.DoFn):
     yield example
 
 
+class logit(beam.DoFn):
+  def process(self,element):
+    yield element
+  
 def configure_pipeline(p, opt):
   """Specify PCollection and transformations in pipeline."""
   read_input_source = beam.io.ReadFromText(
       opt.input_path, strip_trailing_newlines=True)
+  
   read_label_source = beam.io.ReadFromText(
       opt.input_dict, strip_trailing_newlines=True)
-  labels = (p | 'Read dictionary' >> read_label_source)
-  _ = (p
+  labels = (p 
+            | 'Read dictionary' >> read_label_source
+            )
+  out = (p
        | 'Read input' >> read_input_source
        | 'Parse input' >> beam.Map(lambda line: csv.reader([line]).next())
-       | 'Extract label ids' >> beam.ParDo(ExtractLabelIdsDoFn(),
+      | 'Extract label ids' >> beam.ParDo(ExtractLabelIdsDoFn(),
                                            beam.pvalue.AsIter(labels))
        | 'Read and convert to JPEG'
        >> beam.ParDo(ReadImageAndConvertToJpegDoFn())
-       | 'Embed and make TFExample' >> beam.ParDo(TFExampleFromImageDoFn())
-       # TODO(b/35133536): Get rid of this Map and instead use
-       # coder=beam.coders.ProtoCoder(tf.train.Example) in WriteToTFRecord
-       # below.
+      | 'Embed and make TFExample' >> beam.ParDo(TFExampleFromImageDoFn())
        | 'SerializeToString' >> beam.Map(lambda x: x.SerializeToString())
        | 'Save to disk'
        >> beam.io.WriteToTFRecord(opt.output_path,
-                                  file_name_suffix='.tfrecord.gz'))
-
+                                  file_name_suffix='.tfrecord.gz')
+        )
 
 def run(in_args=None):
   """Runs the pre-processing pipeline."""
@@ -483,8 +500,8 @@ def get_cloud_project():
 
 def main(argv):
   arg_dict = default_args(argv)
+  logging.getLogger().setLevel(logging.INFO)  
   run(arg_dict)
-
 
 if __name__ == '__main__':
   main(sys.argv[1:])
