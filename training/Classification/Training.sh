@@ -25,8 +25,8 @@ python pipeline.py \
 
 #If running from pre-processed TFRecords
 #python pipeline.py \
-    #--preprocessed_train_set /Users/ben/Documents/DeepMeerkat/training/Classification/Output/preprocessed/train* \
-    #--preprocessed_eval_set /Users/ben/Documents/DeepMeerkat/training/Classification/Output/preprocessed/eval* \
+    #--preprocessed_train_set '/Users/ben/Documents/DeepMeerkat/training/Classification/Output/preprocessed/train' \
+    #--preprocessed_eval_set '/Users/ben/Documents/DeepMeerkat/training/Classification/Output/preprocessed/eval' \
     #--input_dict /Users/ben/Documents/DeepMeerkat/training/Classification/Samples/dict.txt \
     #--output_dir /Users/ben/Documents/DeepMeerkat/training/Classification/Output/ \
     #--eval_set_size  ${eval} 
